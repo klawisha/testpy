@@ -64,7 +64,7 @@ os.chdir("repo")
 
 subprocess.run(["git", "add", "."], check=True)
 subprocess.run(["git", "commit", "-m", f"Upload {filename}"])
-subprocess.run(["git", "push"], check=True)
+subprocess.run(["git", "push", "--force"], check=True)
 
 os.chdir("..")
 
