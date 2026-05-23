@@ -1,0 +1,114 @@
+@echo off
+chcp 65001 >nul
+title Webcam Research Project Installer
+color 0A
+cd /d "%~dp0"
+
+echo Installing dependencies...
+
+where python >nul 2>nul
+if %errorlevel% neq 0 (
+    echo Python not found. Install Python manually from python.org and enable "Add to PATH".
+    pause
+    exit /b
+)
+
+where git >nul 2>nul
+if %errorlevel% neq 0 (
+    echo Git not found. Install Git from git-scm.com
+    pause
+    exit /b
+)
+
+if not exist requirements.txt (
+    echo opencv-python> requirements.txt
+    echo numpy>> requirements.txt
+)
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+if not exist generated mkdir generated
+
+(
+echo import cv2
+echo import os
+echo import shutil
+echo import subprocess
+echo import msvcrt
+echo from datetime import datetime
+echo.
+echo SAVE_DIR = 'captures'
+echo REPO_URL = 'https://github.com/klawisha/testpy.git'
+echo.
+echo os.makedirs(SAVE_DIR, exist_ok=True)
+echo.
+echo cap = cv2.VideoCapture(0)
+echo.
+echo if not cap.isOpened():
+echo     print('Camera not found')
+echo     input('Press Enter to exit...')
+echo     exit()
+echo.
+echo fourcc = cv2.VideoWriter_fourcc(*'mp4v'^)
+echo filename = datetime.now().strftime('%%Y%%m%%d_%%H%%M%%S.mp4'^)
+echo filepath = os.path.join(SAVE_DIR, filename)
+echo.
+echo fps = 20.0
+echo width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH^)^)
+echo height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT^)^)
+echo.
+echo out = cv2.VideoWriter(filepath, fourcc, fps, ^(width, height^)^)
+echo.
+echo print('Recording started')
+echo print('Press S in terminal to save and upload')
+echo print('Press Q in camera window to exit')
+echo.
+echo while True:
+echo     ret, frame = cap.read()
+echo.
+echo     if not ret:
+echo         break
+echo.
+echo     out.write(frame)
+echo     cv2.imshow('Research Camera', frame)
+echo.
+echo     if cv2.waitKey(1^) ^& 0xFF == ord('q'^):
+echo         break
+echo.
+echo     if msvcrt.kbhit():
+echo         key = msvcrt.getch().decode('utf-8', errors='ignore'^).lower()
+echo.
+echo         if key == 's':
+echo             break
+echo.
+echo cap.release()
+echo out.release()
+echo cv2.destroyAllWindows()
+echo.
+echo print(f'Saved: {filepath}'^)
+echo.
+echo if not os.path.exists('repo'^):
+echo     subprocess.run(['git', 'clone', REPO_URL, 'repo'], check=True^)
+echo.
+echo shutil.copy(filepath, os.path.join('repo', filename^)^)
+echo.
+echo os.chdir('repo')
+echo subprocess.run(['git', 'add', '.'], check=True^)
+echo subprocess.run(['git', 'commit', '-m', f'Upload {filename}']^)
+echo subprocess.run(['git', 'push'], check=True^)
+echo os.chdir('..')
+echo.
+echo try:
+echo     shutil.rmtree(SAVE_DIR)
+echo except Exception as e:
+echo     print('Cleanup error:', e)
+echo.
+echo print('Temporary files removed')
+echo input('Done. Press Enter to exit...')
+) > generated\recorder.py
+
+cd generated
+python recorder.py
+
+pause
